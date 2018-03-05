@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <TextView
+        android:id="@+id/favorSymbol"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:textSize="20sp"
+        android:padding="@dimen/activity_horizontal_margin"
+        android:textColor="@color/colorBlack"
+        android:background="@color/colorWhite"
+        android:text="AMZN" />
+
+    <TextView
+        android:id="@+id/favorPrice"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="20sp"
+        android:padding="@dimen/activity_horizontal_margin"
+
+        android:textColor="@color/colorBlack"
+        android:background="@color/colorWhite"
+        android:layout_weight="1"
+        android:text="Price" />
+
+    <TextView
+        android:id="@+id/favorChange"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textSize="20sp"
+        android:padding="@dimen/activity_horizontal_margin"
+        android:background="@color/colorWhite"
+        android:textColor="@color/colorBlack"
+        android:layout_weight="1"
+        android:text="Change" />
+</LinearLayout>

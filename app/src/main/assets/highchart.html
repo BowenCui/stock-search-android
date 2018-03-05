@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+	<title></title>
+	<meta charset="utf-8">
+		 <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+	  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+	  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+	  
+	   <link rel = "stylesheet"
+         href = "https://ajax.googleapis.com/ajax/libs/angular_material/1.1.0/angular-material.min.css">
+      <script src = "https://ajax.googleapis.com/ajax/libs/angularjs/1.6.4/angular.min.js"></script>
+      <script src = "https://ajax.googleapis.com/ajax/libs/angularjs/1.5.5/angular-animate.min.js"></script>
+      <script src = "https://ajax.googleapis.com/ajax/libs/angularjs/1.5.5/angular-aria.min.js"></script>
+      <script src = "https://ajax.googleapis.com/ajax/libs/angularjs/1.5.5/angular-messages.min.js"></script>
+      <script src = "https://ajax.googleapis.com/ajax/libs/angular_material/1.0.0/angular-material.min.js"></script>
+      <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.4/angular-animate.js"></script>
+      
+
+		 <script src="https://code.highcharts.com/highcharts.js"></script>
+   		<script src="https://code.highcharts.com/modules/exporting.js"></script>
+
+
+		<script src="https://code.highcharts.com/stock/modules/stock.js"></script>
+		<script src="https://code.highcharts.com/stock/modules/exporting.js"></script>
+    
+        <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.4/angular-sanitize.js"></script>
+    
+
+	<script type="text/javascript">
+	$(document).ready(function(){
+		getAndroidData();
+	});
+		function getAndroidData(){
+			var androidIndi = android.getIndicator();
+			var androidData = android.getSymbol();
+			//var androidParse = JSON.parse(androidData);
+
+			if(androidIndi ==="Price"){
+
+				getPriceData(androidData);
+
+			}
+			else{
+				reqIndicator(androidData,androidIndi);
+			}
+			
+
+		};
+		function errorHandle(){
+			android.showError();
+		}
+		function getPriceData(symbol){
+
+				var stockTickerSymbol = symbol;
+
+				var url = "http://cs571hw9-env.us-east-2.elasticbeanstalk.com";
+
+				$.get(url,
+			    {
+			        symbol:stockTickerSymbol
+			    },
+			   function(data, status){
+                    var seriesData = JSON.parse(data);
+			        var seriesDaily = seriesData["Time Series (Daily)"];
+
+			        var dailyKeys = Object.keys(seriesDaily);
+			        var seriesDate = [];
+			        var seriesClose = [];
+			        var seriesVolume = [];
+			        
+			        for(i=0; i<dailyKeys.length; i++){
+
+			        	var date = new Date(dailyKeys[i]);
+						var closeParse = parseFloat(seriesDaily[dailyKeys[i]]["4. close"]);
+			        	var newDateString = (date.getMonth()+1)+'/'+date.getUTCDate();
+			        	seriesDate.push(newDateString);
+			        	seriesClose.push(closeParse);
+			        	seriesVolume.push(parseInt(seriesDaily[dailyKeys[i]]["5. volume"]));
+
+			        }
+			        seriesDate = seriesDate.reverse();
+			        seriesClose = seriesClose.reverse();
+			        seriesVolume = seriesVolume.reverse();
+
+			        loadPrice(seriesDate,seriesClose,seriesVolume,stockTickerSymbol); 
+                    }
+			       
+			    );
+
+		}
+		function loadPrice(date,close,volume,symbol){
+
+			var options = {
+				title:{
+					text:'title'
+				},
+				chart: {
+
+					"zoomType": 'x'
+				},
+				"subtitle":{
+					"useHTML":true,
+					"text":"<a target='_blank' href='https://www.alphavantage.co/'>Source: Alpha Vantage</a>"
+				},
+				legend: {
+					align: 'center',
+					verticalAlign: 'bottom',
+					layout: 'horizontal',
+				},
+				yAxis:[
+				{
+					title:{
+						text:'Stock Price'
+					},
+					labels:{
+						format:'{value:,.2f}'
+					},
+            //min:62.02000000000001,
+            //max:160.12
+        },
+        {
+        	title:{
+        		text:'Volume'
+        	},
+        	opposite:true,
+
+        }],
+        xAxis:{
+        	tickInterval:1
+        },
+        series:[
+        {
+        	type:'area',
+        	name:'',
+        	threshold:null,
+        	yAxis:0,
+            /**
+            tooltip:{
+                pointFormat:'MSFT: {point.y:,..2f}'
+            },
+            */
+            //color:'#060CF8',
+            marker:{
+            	enabled:false
+            }
+        },
+        {
+        	type:'column',
+        	name:'',
+
+        	yAxis:1,
+        	color:'red'
+        }
+        ] 
+    };
+
+    options.xAxis.categories = date;
+    options.series[0].data=close;
+    options.series[1].data=volume;
+    options.series[0].name = "Price";
+    options.series[1].name = "Volume";
+    options.title.text = symbol+" Stock Price and Volume";
+
+    Highcharts.chart('Container',options);
+
+
+}
+function reqIndicator(stockTickerSymbol,indicators){
+	var url = "http://cs571-env.us-east-2.elasticbeanstalk.com";
+	var id = "#"+indicators+"Progress";
+	var idError = "#"+indicators+"Error";
+	var idChart = "#"+indicators+"Container"
+
+	return $.get(url,
+	{
+		symbol:stockTickerSymbol,
+		indicator:indicators
+	},
+	function(data, status){
+
+		//$(id).hide();
+		var jsonResult = JSON.parse(data);
+		if(!jsonResult["Meta Data"]){
+			$(idError).css("display","block");
+		}
+		else{
+			//$(idChart).css("display","block");
+			console.log(indicators +"change to "+data);
+			var seriesDate = [];
+			var seriesIndicator = jsonResult["Technical Analysis: "+indicators];
+			var dailyKeys = Object.keys(seriesIndicator);
+			for(i=0; i<130; i++){
+				var date = new Date(dailyKeys[i]);
+				var newDateString = (date.getMonth()+1)+'/'+date.getUTCDate();
+				seriesDate.push(newDateString);			        					        	
+			}
+			seriesDate = seriesDate.reverse();
+			loadIndicator(jsonResult,indicators,seriesDate,stockTickerSymbol);
+
+			return data;
+		}
+
+
+	});
+}
+function loadIndicator(data,indicator,date,symbol){
+	var options =  {
+		"title":{
+			"text":"title"
+		},
+		chart: {
+			"zoomType": 'x'
+		},
+		"subtitle":{
+			"useHTML":true,
+			"text":"<a target='_blank' href='https://www.alphavantage.co/'>Source: Alpha Vantage</a>"
+		},
+		"yAxis":{
+			"title":{
+				"text":""
+			}
+		},
+		"legend": {
+			"align": 'center',
+			"verticalAlign": 'bottom',
+			"layout": 'horizontal',
+		},
+		"xAxis":{
+			"categories":[
+
+			],
+			"tickInterval":1
+		},
+		"plotOptions": {
+			"series": {
+
+
+			}
+		},
+
+		"series":[
+		{  "lineColor":'#ff0000',
+		"linewidth":1,
+		"color":'#ff0000',
+		"marker": {
+			"enabled": true,
+			"symbol":'square',
+			"lineColor":'#ff0000',
+			"linewidth":1,
+			"fillcolor":'#ff0000',
+			"radius":2,
+		},
+		"name":"",
+		"data":[
+
+		]
+	}
+
+	]
+};
+if(indicator == "SMA"){
+	options.title.text = "Simple Moving Average (SMA)";
+	options.series[0].name = symbol;
+	options.yAxis.title.text = indicator;
+	var dataArr =[];
+	var counter = 0;
+
+
+	for(i in data["Technical Analysis: SMA"]){
+		if(counter < 130){
+			dataArr.push(parseFloat(data["Technical Analysis: SMA"][i]["SMA"]));
+			counter++;
+		}
+		else{
+			break;
+		}
+
+	}
+
+	dataArr = dataArr.reverse();
+	options.series[0].data = dataArr;
+
+
+}
+
+else if(indicator == "EMA"){
+	options.title.text = "Exponential Moving Average (EMA)";
+	options.series[0].name = symbol;
+	options.yAxis.title.text = indicator;
+	var dataArr =[];
+	var counter = 0;
+	for(i in data["Technical Analysis: EMA"]){
+		if(counter < 130){
+			dataArr.push(parseFloat(data["Technical Analysis: EMA"][i]["EMA"]));
+		}
+		counter++;
+	}
+
+	dataArr = dataArr.reverse();
+	options.series[0].data = dataArr;
+}
+else if(indicator == "STOCH"){
+	options.title.text = "Stochastic Oscillator (STOCH)";
+	options.series[0].name = symbol+" SlowK";
+	options.series.push({name :symbol+" SlowD"});
+	options.yAxis.title.text = indicator;
+	var dataArr =[];
+	var dataArr2 =[];
+	var counter = 0;
+
+	for(i in data["Technical Analysis: STOCH"]){
+		if(counter < 130){
+			dataArr.push(parseFloat(data["Technical Analysis: STOCH"][i]["SlowK"]));
+			dataArr2.push(parseFloat(data["Technical Analysis: STOCH"][i]["SlowD"]));
+		}
+		counter++;
+	}
+
+	dataArr = dataArr.reverse();
+	dataArr2 = dataArr2.reverse();
+	options.series[0].data = dataArr;
+	options.series[1].data = dataArr2;
+	options.series[1].marker =
+	{
+		"enabled": true,
+		"symbol":'square',
+
+		"linewidth":1,
+
+		"radius":2,
+	};
+}
+else if(indicator == "RSI"){
+	options.title.text = "Relative Strength Index (RSI)";
+	options.series[0].name = symbol;
+	options.yAxis.title.text = indicator;
+	var dataArr =[];
+	var counter = 0;
+	for(i in data["Technical Analysis: RSI"]){
+		if(counter < 130){
+			dataArr.push(parseFloat(data["Technical Analysis: RSI"][i]["RSI"]));
+		}
+		counter++;
+	}
+
+	dataArr = dataArr.reverse();
+	options.series[0].data = dataArr;
+}
+else if(indicator == "ADX"){
+	options.title.text = "Average Directional movement index (ADX)";
+	options.series[0].name = symbol;
+	options.yAxis.title.text = indicator;
+	var dataArr =[];
+	var counter = 0;
+	for(i in data["Technical Analysis: ADX"]){
+		if(counter < 130){
+			dataArr.push(parseFloat(data["Technical Analysis: ADX"][i]["ADX"]));
+		}
+		counter++;
+	}
+
+	dataArr = dataArr.reverse();
+	options.series[0].data = dataArr;
+}
+else if(indicator == "CCI"){
+	options.title.text = "Commodity Channel Index(CCI)";
+	options.series[0].name = symbol;
+	options.yAxis.title.text = indicator;
+	var dataArr =[];
+	var counter = 0;
+	for(i in data["Technical Analysis: CCI"]){
+		if(counter < 130){
+			dataArr.push(parseFloat(data["Technical Analysis: CCI"][i]["CCI"]));
+		}
+		counter++;
+	}
+
+	dataArr = dataArr.reverse();
+	options.series[0].data = dataArr;
+}
+else if(indicator == "BBANDS"){
+	options.title.text = "Bollinger Bands (BBANDS)";
+	options.series[0].name = symbol+" Real Middle Band";
+	options.series.push({name :symbol+" Real Upper Band"});
+	options.series.push({name :symbol+" Real Lower Band"});
+	options.yAxis.title.text = indicator;
+	var dataArr =[];
+	var dataArr2 =[];
+	var dataArr3 =[];
+	var counter = 0;
+
+	for(i in data["Technical Analysis: BBANDS"]){
+		if(counter < 130){
+			dataArr.push(parseFloat(data["Technical Analysis: BBANDS"][i]["Real Middle Band"]));
+			dataArr2.push(parseFloat(data["Technical Analysis: BBANDS"][i]["Real Upper Band"]));
+			dataArr3.push(parseFloat(data["Technical Analysis: BBANDS"][i]["Real Lower Band"]));
+		}
+		counter++;
+	}
+
+	dataArr = dataArr.reverse();
+	dataArr2 = dataArr2.reverse();
+	dataArr3 = dataArr3.reverse();
+	options.series[0].data = dataArr;
+	options.series[1].data = dataArr2;
+	options.series[2].data = dataArr3;
+	options.series[1].marker =
+	{
+		"enabled": true,
+		"symbol":'square',
+
+		"linewidth":1,
+
+		"radius":2,
+	};
+	options.series[2].marker =
+	{
+		"enabled": true,
+		"symbol":'square',
+
+		"linewidth":1,
+
+		"radius":2,
+	};
+}
+else{
+	options.title.text = "Moving Average Convergence/Divergence (MACD)";
+	options.series[0].name = symbol+" MACD";
+	options.series.push({name :symbol+" MACD_Hist"});
+	options.series.push({name :symbol+" MACD_Signal"});
+	options.yAxis.title.text = indicator;
+	var dataArr =[];
+	var dataArr2 =[];
+	var dataArr3 =[];
+	var counter = 0;
+
+	for(i in data["Technical Analysis: MACD"]){
+		if(counter < 130){
+			dataArr.push(parseFloat(data["Technical Analysis: MACD"][i]["MACD"]));
+			dataArr2.push(parseFloat(data["Technical Analysis: MACD"][i]["MACD_Hist"]));
+			dataArr3.push(parseFloat(data["Technical Analysis: MACD"][i]["MACD_Signal"]));
+		}
+		counter++;
+	}
+
+	dataArr = dataArr.reverse();
+	dataArr2 = dataArr2.reverse();
+	dataArr3 = dataArr3.reverse();
+	options.series[0].data = dataArr;
+	options.series[1].data = dataArr2;
+	options.series[2].data = dataArr3;
+	options.series[1].marker =
+	{
+		"enabled": true,
+		"symbol":'square',
+
+		"linewidth":1,
+
+		"radius":2,
+	};
+	options.series[2].marker =
+	{
+		"enabled": true,
+		"symbol":'square',
+
+		"linewidth":1,
+
+		"radius":2,
+	};
+
+}
+
+options.xAxis.categories = date;
+
+
+Highcharts.chart('Container',options);
+		  //document.getElementById("container").style="width:1000px; height:400px; margin: 0 auto;border:  2px solid rgb(225,225,225)";
+}
+		
+	</script>
+</head>
+<body>
+
+		<div id="Container" style="height:500px; margin: 0 auto;" ></div>
+
+	
+</body>
+</html>

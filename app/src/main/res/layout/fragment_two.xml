@@ -1,0 +1,33 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/constraintLayout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    >
+
+
+    <WebView
+        android:id="@+id/historicalChart"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_gravity="center"
+         >
+
+
+
+    </WebView>
+    <!--
+    <TextView
+        android:id="@+id/errorTextView2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:visibility="gone"
+        android:text="@string/failed_to_load_news_data"
+        android:textColor="@color/colorBlack"
+        android:textSize="20sp"
+        tools:layout_editor_absoluteX="160dp"
+        tools:layout_editor_absoluteY="247dp" />
+        -->
+</RelativeLayout>
